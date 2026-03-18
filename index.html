@@ -6,10 +6,9 @@
     <meta name="theme-color" content="#020617">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>TITAN TETRIS - PWA EDITION</title>
+    <title>TITAN TETRIS - THE DEFINITIVE FINAL</title>
     
-    <!-- 💎 설치형 앱 설정을 위한 매니페스트 (Data URI로 단일 파일 유지) 💎 -->
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRJV要望IE1BU1RFUiIsCiAgInNob3J0X25hbWUiIjogIlRJV要望IsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDIwNjE3IiwKICAidGhlbWVfY29sb3IiOiAiIzAyMDYxNyIsCiAgImljb25zIjogWwogICAgewogICAgICAic3JjIjogImRhdGE6aW1hZ2UvcG5nO2Jhc2U2NCxpVkJPUncwS0dnb0FBQUFOU1VoRVVnQUFBRUFBQUFCQUJBTUFBQUFid3pMMEFBQUFCRmRNVlVRLy8vL0FBQURVNVBVQUFBQUNSMWxSclFBQUFEbElWRVNoZzdOcm1IQUFBQWpSREpSRUY3TVJ2Ynh4eHh4eHgvL3UvL3dBQUFBQUMvL0FBQUFBQUFBQUFBQUFBQUEiLAogICAgICAic2l6ZXMiOiAiMTkyeDE5MiIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIKICAgIH0KICBdCn0=">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlRJV要望IE1BU1RFUiIsCiAgInNob3J0X25hbWUiIjogIlRJV要望IsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjMDIwNjE3IiwKICAidGhlbWVfY29sb3IiOiAiIzAyMDYxNyIKfQ==">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -27,20 +26,21 @@
             justify-content: space-between; 
             height: 100vh;
             margin: 0;
-            padding: 5px 5px 10px 5px;
+            padding: 5px;
         }
 
+        /* 💎 게임 보드: 화면 상단을 최대한 넓게 차지 💎 */
         #game-wrapper {
             position: relative;
             width: 100%;
-            max-width: 300px;
+            max-width: 320px;
             flex: 1; 
-            max-height: 72vh;
-            border: 4px solid #334155;
+            max-height: 78vh; /* 보드 크기를 더 키움 */
+            border: 3px solid #334155;
             border-radius: 12px;
             background: #000;
             overflow: hidden;
-            margin: 5px 0;
+            margin-top: 5px;
         }
 
         canvas {
@@ -73,10 +73,11 @@
             overflow: hidden;
         }
 
+        /* 💎 서방님 요청 조작키: 높이를 줄여서 2줄로 꽉 채움 💎 */
         .btn-action {
             background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
             box-shadow: 0 2px 0 #1e3a8a;
-            border-radius: 10px;
+            border-radius: 8px;
             color: white;
             display: flex;
             flex-direction: column;
@@ -85,24 +86,24 @@
             cursor: pointer;
             user-select: none;
             pointer-events: auto;
-            height: 45px;
+            height: 44px; /* 높이 최적화 */
         }
-        .btn-action:active { transform: translateY(2px); box-shadow: 0 0 0 #1e3a8a; filter: brightness(1.1); }
-        .btn-label { font-size: 9px; font-weight: 900; line-height: 1; margin-top: 2px; }
+        .btn-action:active { transform: translateY(2px); box-shadow: 0 0 0 #1e3a8a; filter: brightness(1.2); }
+        .btn-label { font-size: 10px; font-weight: 900; margin-top: 1px; }
 
         .control-pad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 5px;
+            gap: 4px;
             width: 100%;
-            max-width: 320px;
-            margin-bottom: 5px;
+            max-width: 340px;
+            margin-bottom: 5px; /* 바닥에 밀착 */
         }
 
         #announcer-text {
-            font-size: 2.5rem;
+            font-size: 3rem;
             font-family: 'Orbitron', sans-serif;
-            text-shadow: 0 0 15px white;
+            text-shadow: 0 0 20px white;
         }
         
         .blink { animation: blinker 1.5s infinite; }
@@ -111,37 +112,58 @@
 </head>
 <body>
 
-    <div class="w-full max-w-[280px] flex justify-between items-center px-1">
-        <div class="flex flex-col">
-            <span class="text-blue-400 font-black text-[10px] font-['Orbitron']">TITAN PWA V12</span>
-            <div class="flex gap-1">
-                <span class="bg-blue-600 px-1 rounded text-[7px] font-bold">Lv.<span id="level">1</span></span>
-                <span id="combo-tag" class="hidden bg-orange-500 px-1 rounded text-[7px] font-bold animate-pulse">COMBO</span>
+    <!-- 대시보드 -->
+    <div class="w-full max-w-[300px] flex justify-between items-center px-1">
+        <div class="flex items-center gap-2">
+            <div class="flex flex-col">
+                <span class="text-blue-400 font-black text-[10px] font-['Orbitron']">TITAN MASTER</span>
+                <div class="flex gap-1 mt-0.5">
+                    <span class="bg-blue-600 px-1 rounded text-[7px] font-bold">Lv.<span id="level">1</span></span>
+                    <span id="combo-tag" class="hidden bg-orange-500 px-1 rounded text-[7px] font-bold animate-pulse">COMBO</span>
+                </div>
             </div>
+            <button onclick="toggleMute()" class="ml-2 text-xl active:scale-75 transition-transform">
+                <span id="mute-icon">🔊</span>
+            </button>
         </div>
         <div class="text-right">
-            <div id="score" class="text-2xl font-black leading-none tracking-tighter">0</div>
+            <div id="score" class="text-2xl font-black tabular-nums tracking-tighter">0</div>
         </div>
     </div>
 
+    <!-- 💎 확대된 게임 보드 💎 -->
     <div id="game-wrapper" onpointerdown="handleScreenTouch(event)">
         <canvas id="board"></canvas>
-        <div id="intro-layer" class="ui-layer bg-slate-900/90 pointer-events-auto">
-            <div id="boot-btn" onclick="launchSystem()" class="w-36 h-36 rounded-full border-4 border-blue-500/50 flex flex-col items-center justify-center bg-slate-800 shadow-2xl cursor-pointer active:scale-95 transition-transform">
-                <span id="boot-text" class="font-black italic font-['Orbitron'] text-xl">START</span>
-                <span id="boot-sub" class="text-[7px] font-bold text-blue-400 blink mt-1 tracking-widest uppercase">Tap to Play</span>
+        
+        <!-- 시작 레이어 -->
+        <div id="intro-layer" class="ui-layer bg-slate-900/95 pointer-events-auto">
+            <div onclick="launchSystem()" class="w-36 h-36 rounded-full border-4 border-blue-500/50 flex flex-col items-center justify-center bg-slate-800 shadow-2xl cursor-pointer active:scale-95 transition-transform">
+                <span class="font-black italic font-['Orbitron'] text-xl">START</span>
+                <span class="text-[8px] font-bold text-blue-400 blink mt-1 uppercase">Tap to Play</span>
             </div>
         </div>
+
+        <!-- 일시정지 레이어 -->
+        <div id="pause-layer" class="ui-layer bg-black/70 hidden pointer-events-auto">
+            <div onclick="togglePause()" class="flex flex-col items-center cursor-pointer">
+                <h2 class="font-black italic font-['Orbitron'] text-4xl text-yellow-400 animate-pulse">PAUSED</h2>
+                <span class="text-xs font-bold text-white mt-4 tracking-[0.2em] uppercase">Tap to Resume</span>
+            </div>
+        </div>
+
         <div id="voice-layer" class="ui-layer hidden"><h2 id="announcer-text">READY</h2></div>
+
         <div id="shutter">
             <div id="game-over-ui" class="opacity-0 transition-opacity duration-500 flex flex-col items-center">
-                <h2 class="font-black text-white italic text-2xl mb-6 uppercase">Game Over</h2>
+                <h2 class="font-black text-white italic text-3xl mb-6 uppercase">Game Over</h2>
                 <button onclick="location.reload()" class="btn-action px-12 h-12 text-sm tracking-widest pointer-events-auto uppercase">Reboot</button>
             </div>
         </div>
     </div>
 
+    <!-- 💎 서방님 전용 2줄 조작 패드 💎 -->
     <div class="control-pad">
+        <!-- 1줄: 왼쪽, 회전(위), 오른쪽 -->
         <button onpointerdown="handleTouchControl('left')" class="btn-action">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
             <span class="btn-label">왼쪽</span>
@@ -154,35 +176,31 @@
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
             <span class="btn-label">오른쪽</span>
         </button>
+
+        <!-- 2줄: 하강, 한방에, 잠시멈춤 -->
         <button onpointerdown="handleTouchControl('down')" class="btn-action">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M19 13l-7 7-7-7"/></svg>
             <span class="btn-label">하강</span>
         </button>
         <button onpointerdown="handleTouchControl('space')" class="btn-action bg-orange-600 shadow-orange-900">
-            <span class="italic font-black text-[11px]">HARD DROP</span>
+            <span class="italic font-black text-[11px] leading-none">HARD DROP</span>
             <span class="btn-label text-[7px]">한방에!</span>
         </button>
-        <button onclick="toggleMute()" class="btn-action bg-slate-800 shadow-slate-900">
-            <span id="mute-icon" class="text-[14px]">🔊</span>
-            <span class="btn-label text-[7px]">SOUND</span>
+        <button onpointerdown="togglePause()" class="btn-action bg-yellow-600 shadow-yellow-900">
+            <div id="pause-btn-icon" class="flex gap-1">
+                <div class="w-1.5 h-4 bg-white rounded-full"></div>
+                <div class="w-1.5 h-4 bg-white rounded-full"></div>
+            </div>
+            <span class="btn-label">잠시멈춤</span>
         </button>
     </div>
 
     <script>
-        // 💎 오프라인 사용을 위한 서비스 워커 등록 💎
+        // 서비스 워커 (오프라인 캐시)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const swCode = `
-                    const CACHE_NAME = 'titan-tetris-v1';
-                    self.addEventListener('install', (e) => {
-                        e.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll([location.href])));
-                    });
-                    self.addEventListener('fetch', (e) => {
-                        e.respondWith(caches.match(e.request).then((res) => res || fetch(e.request)));
-                    });
-                `;
-                const blob = new Blob([swCode], { type: 'application/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+                const swCode = `const CACHE_NAME='titan-final-v1';self.addEventListener('install',(e)=>{e.waitUntil(caches.open(CACHE_NAME).then((c)=>c.addAll([location.href])));});self.addEventListener('fetch',(e)=>{e.respondWith(caches.match(e.request).then((r)=>r||fetch(e.request)));});`;
+                navigator.serviceWorker.register(URL.createObjectURL(new Blob([swCode],{type:'application/javascript'}))).catch(()=>{});
             });
         }
 
@@ -190,10 +208,11 @@
         const masterBus = audioCtx.createGain(); masterBus.connect(audioCtx.destination);
         let isMuted = false, bgmTimer = null, gameState = 'intro';
 
+        // 💎 전곡 멜로디 (Korobeiniki) 💎
         const KORO = [
-            [659, 4], [493, 8], [523, 8], [587, 4], [523, 8], [493, 8], [440, 4], [440, 8], [523, 8], [659, 4], [587, 8], [523, 8], [493, 4.5], [493, 8], [523, 8], [587, 4], [659, 4], [523, 4], [440, 4], [440, 4], [0, 4],
+            [659, 4], [493, 8], [523, 8], [587, 4], [523, 8], [493, 8], [440, 4], [440, 8], [523, 8], [659, 4], [587, 8], [523, 8], [493, 4], [493, 8], [523, 8], [587, 4], [659, 4], [523, 4], [440, 4], [440, 4], [0, 4],
             [587, 3], [698, 8], [880, 4], [783, 8], [698, 8], [659, 3], [523, 8], [659, 4], [587, 8], [523, 8], [493, 4], [493, 8], [523, 8], [587, 4], [659, 4], [523, 4], [440, 4], [440, 4], [0, 4],
-            [659, 2], [523, 2], [587, 2], [493, 2], [523, 2], [440, 2], [415, 2], [493, 2], [659, 2], [523, 2], [587, 2], [493, 2], [523, 4], [659, 4], [880, 2], [830, 2], [0, 4]
+            [329, 2], [261, 2], [293, 2], [246, 2], [261, 2], [220, 2], [207, 2], [246, 2], [329, 2], [261, 2], [293, 2], [246, 2], [261, 4], [329, 4], [440, 2], [415, 2]
         ];
         let kIdx = 0;
 
@@ -201,15 +220,17 @@
             if (gameState !== 'playing' || isMuted) return;
             const [f, d] = KORO[kIdx];
             if (f > 0) { synth(f, 0.4, 0.02, 'sawtooth'); synth(f/2, 0.5, 0.04, 'sine'); }
-            bgmTimer = setTimeout(() => { kIdx = (kIdx + 1) % KORO.length; playBGM(); }, (60000 / (150 + level * 5) / 4) * (16 / d));
+            const tempo = 155 + level * 2;
+            bgmTimer = setTimeout(() => { kIdx = (kIdx + 1) % KORO.length; playBGM(); }, (60000 / tempo / 4) * (16 / d));
         }
 
+        // 💎 즉각 반응 보이스 엔진 💎
         function speak(text) {
             if (isMuted) return;
             try {
                 window.speechSynthesis.cancel();
                 const msg = new SpeechSynthesisUtterance(text);
-                msg.lang = 'ko-KR'; msg.rate = 1.7; msg.pitch = 0.9;
+                msg.lang = 'ko-KR'; msg.rate = 1.7; msg.volume = 1.0;
                 window.speechSynthesis.speak(msg);
             } catch(e) {}
         }
@@ -247,6 +268,19 @@
             gameState = 'playing'; playerReset(); kIdx = 0; playBGM(); update();
         }
 
+        function togglePause() {
+            if (gameState === 'playing') {
+                gameState = 'paused'; clearTimeout(bgmTimer);
+                document.getElementById('pause-layer').classList.remove('hidden');
+                document.getElementById('pause-btn-icon').innerHTML = '<svg class="w-5 h-5 text-white fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+            } else if (gameState === 'paused') {
+                gameState = 'playing';
+                document.getElementById('pause-layer').classList.add('hidden');
+                document.getElementById('pause-btn-icon').innerHTML = '<div class="w-1.5 h-4 bg-white rounded-full"></div><div class="w-1.5 h-4 bg-white rounded-full"></div>';
+                playBGM(); lastTime = performance.now(); update();
+            }
+        }
+
         function drawBlock(c, x, y, colorIdx, ghost = false) {
             const px = x * SIZE, py = y * SIZE; const color = COLORS[colorIdx];
             if (!color) return;
@@ -259,7 +293,7 @@
         function draw() {
             ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, canvas.width, canvas.height);
             board.forEach((row, y) => row.forEach((v, x) => { if (v) drawBlock(ctx, x, y, v); }));
-            if (player.matrix && gameState === 'playing') {
+            if (player.matrix && (gameState === 'playing' || gameState === 'paused')) {
                 let gy = player.pos.y; while (!collide(board, {matrix: player.matrix, pos: {x: player.pos.x, y: gy + 1}})) gy++;
                 player.matrix.forEach((r, y) => r.forEach((v, x) => { if (v) drawBlock(ctx, player.pos.x+x, gy+y, v, true); }));
                 player.matrix.forEach((r, y) => r.forEach((v, x) => { if (v) drawBlock(ctx, player.pos.x+x, player.pos.y+y, v); }));
@@ -283,17 +317,18 @@
             let lines = 0;
             for (let y = board.length - 1; y >= 0; y--) { if (board[y].every(c => c !== 0)) { board.splice(y, 1); board.unshift(new Array(COLS).fill(0)); y++; lines++; } }
             if (lines > 0) {
-                const words = ["", "싱글", "더블", "트리플", "테트리스"]; speak(words[lines] || "나이스");
+                const words = ["", "싱글", "더블", "트리플", "테트리스"]; speak(words[lines]);
                 score += [0, 100, 300, 500, 1000][lines] * level; totalLines += lines;
                 if (totalLines >= level * 10) level++;
-                document.getElementById('score').innerText = score.toLocaleString(); document.getElementById('level').innerText = level;
+                document.getElementById('score').innerText = score.toLocaleString();
+                document.getElementById('level').innerText = level;
                 dropInterval = Math.max(100, 1000 - (level * 80)); synth(800, 0.3, 0.1, 'triangle');
             }
         }
 
         function triggerGameOver() {
             gameState = 'gameover'; document.getElementById('shutter').style.height = '100%';
-            speak('여기까지'); clearTimeout(bgmTimer); synth(200, 0.5, 0.1);
+            speak('여기까지'); clearTimeout(bgmTimer); synth(150, 0.8, 0.1, 'sawtooth');
             setTimeout(() => { document.getElementById('game-over-ui').style.opacity = '1'; }, 500);
         }
 
@@ -324,7 +359,7 @@
             if (act === 'space') {
                 while (!collide(board, player)) player.pos.y++;
                 player.pos.y--; player.matrix.forEach((r,y)=>r.forEach((v,x)=>{if(v) board[y+player.pos.y][x+player.pos.x]=v;}));
-                synth(150, 0.2, 0.08, 'sawtooth'); arenaSweep(); playerReset();
+                synth(150, 0.2, 0.1, 'sawtooth'); arenaSweep(); playerReset();
             }
             draw();
         };
@@ -346,6 +381,7 @@
         };
 
         document.addEventListener('keydown', e => { 
+            if (e.keyCode === 27 || e.keyCode === 80) { togglePause(); return; }
             const k = {37:'left', 39:'right', 40:'down', 38:'up', 32:'space'};
             if (k[e.keyCode]) { e.preventDefault(); handleControl(k[e.keyCode]); }
         });
