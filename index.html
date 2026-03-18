@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TITAN TETRIS - SUPREME MASTER FINAL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@700;900&display=swap');
+        
+        body {
+            background: #020617;
+            color: #f8fafc;
+            font-family: 'Noto Sans KR', sans-serif;
+            touch-action: none;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* 타격감 효과 */
+        .impact { animation: impact-shake 0.15s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes impact-shake {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05) translateY(2px); }
+            100% { transform: scale(1); }
+        }
+
+        canvas {
+            border: 4px solid #1e293b;
+            border-radius: 12px;
+            box-shadow: 0 0 50px rgba(0, 0, 0, 1);
+            background: #020617;
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* 레이어 완벽 정중앙 정렬 */
+        .ui-layer {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            z-index: 600;
+        }
+
+        /* 리얼 메탈 셔터 */
+        #shutter {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 0;
+            transition: height 1s cubic-bezier(0.77, 0, 0.175, 1);
+            background: repeating-linear-gradient(
+                to bottom,
+                #94a3b8 0px, #f8fafc 1px, #94a3b8 3px, #64748b 24px, #475569 26px, #1e293b 28px
+            );
+            border-bottom: 10px solid #000;
+            box-shadow: inset 0 -40px 100px rgba(0,0,0,0.9);
+            z-index: 500;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .game-over-neon {
+            font-family: 'Orbitron', sans-serif;
+            animation: rainbow-glow 2s infinite linear;
+            text-transform: uppercase;
+            font-weight: 900;
+            font-size: 2.2rem;
+            margin-bottom: 2rem;
+            width: 100%;
+        }
+
+        @keyframes rainbow-glow {
+            0% { color: #fff; text-shadow: 0 0 15px #ff3e3e, 0 0 30px #ff3e3e; }
+            33% { color: #fff; text-shadow: 0 0 15px #3eff3e, 0 0 30px #3eff3e; }
+            66% { color: #fff; text-shadow: 0 0 15px #3e3eff, 0 0 30px #3e3eff; }
+            100% { color: #fff; text-shadow: 0 0 15px #ff3e3e, 0 0 30px #ff3e3e; }
+        }
+
+        .btn-action {
+            background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+            box-shadow: 0 4px 0 #1e3a8a;
+            border-radius: 99px;
+            transition: all 0.1s;
+            font-family: 'Orbitron', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            color: white;
+            font-weight: 900;
+            cursor: pointer;
+        }
+        .btn-action:active { transform: translateY(2px); box-shadow: 0 2px 0 #1e3a8a; filter: brightness(1.2); }
+
+        .label-text { font-size: 10px; color: #94a3b8; font-weight: 900; letter-spacing: 0.1em; text-transform: uppercase; }
+        .blink { animation: blinker 1.5s infinite; }
+        @keyframes blinker { 50% { opacity: 0.3; } }
+
+        .control-pad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            max-width: 280px;
+            margin-top: 10px;
+        }
+
+        #announcer-text {
+            font-size: 3.5rem;
+            width: 100%;
+            text-align: center;
+            font-family: 'Orbitron', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-frame" class="max-w-md w-full flex flex-col items-center gap-3 p-2 relative">
+        <!-- 대시보드 -->
+        <div class="w-full flex justify-between items-center bg-slate-800 p-4 rounded-2xl border-b-4 border-slate-700 shadow-xl">
+            <div class="flex flex-col">
+                <h1 class="text-xl font-black text-blue-400 italic tracking-tighter uppercase font-['Orbitron']">Titan</h1>
+                <div class="flex gap-2 mt-1">
+                    <span class="bg-blue-600 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase">Lv.<span id="level">1</span></span>
+                    <span id="combo-tag" class="hidden bg-orange-500 px-2 py-0.5 rounded text-[9px] font-bold text-white uppercase animate-bounce">Combo x<span id="combo-count">0</span></span>
+                </div>
+            </div>
+            <div class="text-right">
+                <span class="label-text">Score</span>
+                <div id="score" class="text-2xl font-black text-white tabular-nums tracking-tighter">0</div>
+            </div>
+        </div>
+
+        <div class="relative flex flex-col md:flex-row gap-4 justify-center items-center w-full">
+            <!-- 게임 보드 -->
+            <div id="container" class="relative overflow-hidden rounded-xl shadow-2xl" style="width: 240px; height: 480px;">
+                <canvas id="board" width="240" height="480"></canvas>
+                
+                <!-- 인트로 -->
+                <div id="intro-layer" class="ui-layer bg-slate-900/95 backdrop-blur-md pointer-events-auto">
+                    <div onclick="launchSystem()" class="w-[85%] h-72 rounded-[2.5rem] border-4 border-slate-700 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-800 hover:border-blue-500/40 group shadow-2xl">
+                        <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-all">
+                            <svg class="w-10 h-10 text-white fill-current translate-x-1" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                        </div>
+                        <h3 class="text-2xl font-black text-white italic tracking-widest font-['Orbitron'] mb-2">START</h3>
+                        <p id="intro-status" class="text-[9px] font-bold text-blue-400 uppercase tracking-[0.3em] blink">TAP TO BOOT</p>
+                    </div>
+                </div>
+
+                <!-- 보이스 레이어 -->
+                <div id="voice-layer" class="ui-layer hidden pointer-events-none">
+                    <h2 id="announcer-text" class="font-black text-white italic drop-shadow-[0_0_30px_rgba(255,255,255,1)]">READY</h2>
+                </div>
+
+                <!-- 셔터 -->
+                <div id="shutter">
+                    <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-32 h-4 bg-gradient-to-b from-slate-300 to-slate-800 rounded-full border-2 border-slate-200"></div>
+                    <div id="game-over-ui" class="opacity-0 transition-opacity duration-1000 delay-300 w-full flex flex-col items-center justify-center">
+                        <h2 class="game-over-neon italic tracking-tighter">GAME OVER</h2>
+                        <button onclick="resetGame()" class="btn-action px-12 py-3 text-lg tracking-widest uppercase active:scale-95 mb-6 pointer-events-auto">▶ REBOOT</button>
+                        <button onclick="location.reload()" class="text-slate-500 hover:text-white transition-colors font-bold uppercase text-[9px] tracking-[0.3em] pointer-events-auto">Exit Session</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 컨트롤 & 사이드바 -->
+            <div class="flex flex-col items-center gap-3 w-full md:w-32">
+                <div class="bg-slate-800 p-3 rounded-2xl border-b-4 border-slate-700 w-full flex flex-col items-center justify-center shadow-xl">
+                    <span class="label-text mb-2">Next</span>
+                    <canvas id="next" width="60" height="60"></canvas>
+                </div>
+                
+                <!-- 모바일 터치 패드 -->
+                <div class="control-pad">
+                    <button ontouchstart="handleTouchControl('up')" class="btn-action p-4 col-start-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                    </button>
+                    <button ontouchstart="handleTouchControl('left')" class="btn-action p-4 row-start-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+                    </button>
+                    <button ontouchstart="handleTouchControl('down')" class="btn-action p-4 row-start-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M19 13l-7 7-7-7"/></svg>
+                    </button>
+                    <button ontouchstart="handleTouchControl('right')" class="btn-action p-4 row-start-2">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                    <button ontouchstart="handleTouchControl('space')" class="btn-action p-4 col-span-3 mt-1 bg-orange-600 shadow-orange-900">
+                        HARD DROP
+                    </button>
+                </div>
+
+                <button onclick="toggleMute()" class="bg-slate-800 hover:bg-slate-700 p-3 rounded-xl border-b-4 border-slate-700 w-full transition-all active:scale-90 shadow-xl text-lg">
+                    <span id="mute-icon">🔊</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = "";
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const voiceCache = {};
+        const masterBus = audioCtx.createGain();
+        const mainFilter = audioCtx.createBiquadFilter();
+        mainFilter.type = "lowpass"; mainFilter.frequency.value = 5000;
+        const mainDelay = audioCtx.createDelay(0.5);
+        const delayGain = audioCtx.createGain();
+        mainDelay.delayTime.value = 0.2; delayGain.gain.value = 0.15;
+        masterBus.connect(mainFilter); mainFilter.connect(audioCtx.destination);
+        mainDelay.connect(delayGain); delayGain.connect(mainFilter); delayGain.connect(mainDelay);
+
+        let isMuted = false, bgmTimer = null, gameState = 'intro';
+
+        // 한국어 보이스 엔진
+        function speakNative(text, callback) {
+            if (isMuted) return callback?.();
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'ko-KR'; msg.rate = 1.4; msg.pitch = 0.9;
+            msg.onend = callback;
+            window.speechSynthesis.speak(msg);
+        }
+
+        async function speak(key) {
+            if (isMuted) return Promise.resolve();
+            const textMap = { ready: '레디', start: '스타트', single: '싱글', double: '더블', triple: '트리플', tetris: '테트리스', combo: '콤보', ending: '여기까지' };
+            return new Promise(r => {
+                if (voiceCache[key]) {
+                    const audio = new Audio(voiceCache[key]);
+                    audio.playbackRate = 1.35; audio.onended = r;
+                    audio.play().catch(() => speakNative(textMap[key], r));
+                } else { speakNative(textMap[key], r); }
+                setTimeout(r, 1000);
+            });
+        }
+
+        function synth(freq, dur, vol, type = 'sine', detune = 0) {
+            if (isMuted) return;
+            const now = audioCtx.currentTime;
+            const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+            o.type = type; o.frequency.setValueAtTime(freq, now); o.detune.setValueAtTime(detune, now);
+            g.gain.setValueAtTime(0, now); g.gain.linearRampToValueAtTime(vol, now + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+            o.connect(g); g.connect(masterBus); if (type !== 'sine') g.connect(mainDelay);
+            o.start(); o.stop(now + dur);
+        }
+
+        const KORO = [[659, 4], [493, 8], [523, 8], [587, 4], [523, 8], [493, 8], [440, 4], [440, 8], [523, 8], [659, 4], [587, 8], [523, 8], [493, 4], [493, 8], [523, 8], [587, 4], [659, 4], [523, 4], [440, 4], [440, 4], [0, 4]];
+        let kIdx = 0;
+        function playBGM() {
+            if (gameState !== 'playing' || isMuted) return;
+            const [f, d] = KORO[kIdx];
+            if (f > 0) {
+                synth(f, 0.4, 0.025, 'sawtooth', -10); synth(f, 0.4, 0.025, 'sawtooth', 10);
+                synth(f/2, 0.5, 0.06, 'sine');
+            }
+            bgmTimer = setTimeout(() => { kIdx = (kIdx + 1) % KORO.length; playBGM(); }, (60000 / (155 + level * 3) / 4) * (16 / d));
+        }
+
+        const canvas = document.getElementById('board'), ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('next'), nextCtx = nextCanvas.getContext('2d');
+        const COLS = 10, ROWS = 20, SIZE = 24; 
+        const COLORS = [null, '#00e5ff', '#1e40ff', '#ff9100', '#ffe600', '#00ff42', '#c628ff', '#ff1100'];
+        const SHAPES = [[], [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], [[2,0,0],[2,2,2],[0,0,0]], [[0,0,3],[3,3,3],[0,0,0]], [[4,4],[4,4]], [[0,5,5],[5,5,0],[0,0,0]], [[0,6,0],[6,6,6],[0,0,0]], [[7,7,0],[0,7,7],[0,0,0]]];
+        
+        let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+        let score = 0, level = 1, comboCount = 0, totalLines = 0, dropCounter = 0, dropInterval = 1000, lastTime = 0, particles = [];
+        let player = { pos: {x: 0, y: 0}, matrix: null, next: (Math.random()*7|0)+1 };
+
+        async function fetchVoice(text) {
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: text }] }],
+                        systemInstruction: { parts: [{ text: "Act as an energetic professional arcade announcer. Shout very short and powerful." }] },
+                        generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } } } }
+                    })
+                });
+                const res = await response.json();
+                const b64 = res.candidates[0].content.parts[0].inlineData.data;
+                return URL.createObjectURL(new Blob([Uint8Array.from(atob(b64), c => c.charCodeAt(0))], {type: 'audio/wav'}));
+            } catch (e) { return null; }
+        }
+
+        async function preload() {
+            const keys = ['ready', 'start', 'single', 'double', 'triple', 'tetris', 'combo', 'ending'];
+            const words = ["READY", "START", "SINGLE", "DOUBLE", "TRIPLE", "TETRIS", "COMBO", "여기까지"];
+            await Promise.all(keys.map(async (k, i) => { voiceCache[k] = await fetchVoice(words[i]); }));
+        }
+
+        async function launchSystem() {
+            if (audioCtx.state === 'suspended') await audioCtx.resume();
+            document.getElementById('intro-status').innerText = "CALIBRATING...";
+            await preload();
+            document.getElementById('intro-layer').classList.add('hidden');
+            const vLayer = document.getElementById('voice-layer');
+            const annText = document.getElementById('announcer-text');
+            vLayer.classList.remove('hidden');
+            annText.innerText = "READY"; await speak('ready');
+            annText.innerText = "START"; await speak('start');
+            vLayer.classList.add('hidden');
+            gameState = 'playing'; playerReset(); kIdx = 0; playBGM(); lastTime = performance.now(); update();
+        }
+
+        function drawBlock(c, x, y, colorIdx, isGhost = false, scale = 1) {
+            const s = SIZE * scale; const px = x * s, py = y * s; const color = COLORS[colorIdx];
+            if (!color) return;
+            if (isGhost) {
+                c.strokeStyle = color; c.lineWidth = 1; c.globalAlpha = 0.35;
+                c.setLineDash([4, 2]); c.strokeRect(px + 3, py + 3, s - 6, s - 6); 
+                c.setLineDash([]); c.globalAlpha = 1; return;
+            }
+            c.fillStyle = '#000'; c.fillRect(px, py, s, s);
+            c.fillStyle = color; c.fillRect(px + 1, py + 1, s - 2, s - 2);
+            // 한게임 스타일 입체 베벨
+            c.fillStyle = 'rgba(255, 255, 255, 0.45)'; c.fillRect(px + 1, py + 1, s - 2, 3); c.fillRect(px + 1, py + 1, 3, s - 2);
+            c.fillStyle = 'rgba(0, 0, 0, 0.3)'; c.fillRect(px + 1, py + s - 4, s - 2, 3); c.fillRect(px + s - 4, py + 1, 3, s - 2);
+            c.fillStyle = 'rgba(0, 0, 0, 0.15)'; c.fillRect(px + 5, py + 5, s - 10, s - 10);
+            c.fillStyle = color; c.fillRect(px + 6, py + 6, s - 12, s - 12);
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = '#0f172a';
+            for(let i=0; i<=COLS; i++) { ctx.beginPath(); ctx.moveTo(i*SIZE, 0); ctx.lineTo(i*SIZE, canvas.height); ctx.stroke(); }
+            for(let i=0; i<=ROWS; i++) { ctx.beginPath(); ctx.moveTo(0, i*SIZE); ctx.lineTo(canvas.width, i*SIZE); ctx.stroke(); }
+            board.forEach((row, y) => row.forEach((val, x) => { if (val) drawBlock(ctx, x, y, val); }));
+            if (player.matrix && gameState === 'playing') {
+                let gY = player.pos.y; while (!collide(board, {matrix: player.matrix, pos: {x: player.pos.x, y: gY + 1}})) gY++;
+                player.matrix.forEach((row, y) => row.forEach((v, x) => { if (v) drawBlock(ctx, player.pos.x+x, gY+y, v, true); }));
+                player.matrix.forEach((row, y) => row.forEach((v, x) => { if (v) drawBlock(ctx, player.pos.x+x, player.pos.y+y, v); }));
+            }
+            particles = particles.filter(p => p.life > 0); 
+            particles.forEach(p => { p.x+=p.vx; p.y+=p.vy; p.life-=0.04; ctx.globalAlpha=p.life; ctx.fillStyle='#fff'; ctx.fillRect(p.x,p.y,3,3); });
+            ctx.globalAlpha = 1;
+            nextCtx.clearRect(0, 0, 60, 60); if(player.next) SHAPES[player.next].forEach((row,y)=>row.forEach((v,x)=>{if(v) drawBlock(nextCtx, x+0.1, y+0.1, v, false, 0.8);}));
+        }
+
+        function collide(b, p) {
+            const [m, o] = [p.matrix, p.pos];
+            for (let y = 0; y < m.length; ++y) for (let x = 0; x < m[y].length; ++x)
+                if (m[y][x] !== 0 && (b[y + o.y] === undefined || b[y + o.y][x + o.x] === undefined || b[y + o.y][x + o.x] !== 0)) return true;
+            return false;
+        }
+
+        function playerReset() {
+            player.matrix = SHAPES[player.next]; player.next = (Math.random()*7|0)+1;
+            player.pos.y = 0; player.pos.x = (COLS/2|0) - (player.matrix[0].length/2|0);
+            if (collide(board, player)) triggerGameOver();
+        }
+
+        function arenaSweep() {
+            let rc = 0;
+            for (let y = board.length - 1; y >= 0; y--) {
+                if (board[y].every(c => c !== 0)) {
+                    for(let i=0;i<40;i++) particles.push({x:Math.random()*canvas.width, y:y*SIZE, vx:(Math.random()-0.5)*20, vy:(Math.random()-0.5)*20, life:1});
+                    board.splice(y, 1); board.unshift(new Array(COLS).fill(0)); y++; rc++;
+                }
+            }
+            if (rc > 0) {
+                speak(['', 'single', 'double', 'triple', 'tetris'][rc]);
+                comboCount++; totalLines += rc;
+                if (comboCount > 1) { setTimeout(() => speak('combo'), 250); document.getElementById('combo-tag').classList.remove('hidden'); document.getElementById('combo-count').innerText = comboCount; }
+                score += ([0, 100, 400, 900, 6000][rc] + (comboCount > 1 ? comboCount * 3000 * rc : 0)) * level;
+                if (totalLines >= level * 6) { level++; dropInterval = Math.max(100, 1000 * Math.pow(0.78, level-1)); }
+                document.getElementById('score').innerText = score.toLocaleString(); document.getElementById('level').innerText = level;
+                document.getElementById('game-frame').classList.add('impact'); setTimeout(()=>document.getElementById('game-frame').classList.remove('impact'), 150);
+            } else { comboCount = 0; document.getElementById('combo-tag').classList.add('hidden'); }
+        }
+
+        function triggerGameOver() {
+            gameState = 'gameover'; clearTimeout(bgmTimer);
+            synth(200, 0.4, 0.1, 'sine'); synth(100, 0.6, 0.1, 'sine');
+            document.getElementById('shutter').style.height = '100%';
+            speak('ending'); setTimeout(() => { document.getElementById('game-over-ui').style.opacity = '1'; }, 1000);
+        }
+
+        function update(t = 0) {
+            if (gameState !== 'playing') return;
+            const dt = t - lastTime; lastTime = t; dropCounter += dt;
+            if (dropCounter > dropInterval) {
+                player.pos.y++;
+                if (collide(board, player)) {
+                    player.pos.y--; player.matrix.forEach((r,y)=>r.forEach((v,x)=>{if(v) board[y+player.pos.y][x+player.pos.x]=v;}));
+                    arenaSweep(); playerReset();
+                }
+                dropCounter = 0;
+            }
+            draw(); requestAnimationFrame(update);
+        }
+
+        window.handleControl = function(act) {
+            if (gameState !== 'playing') return;
+            if (act === 'left') { player.pos.x--; if(collide(board,player)) player.pos.x++; else synth(300, 0.05, 0.02, 'sine'); }
+            if (act === 'right') { player.pos.x++; if(collide(board,player)) player.pos.x--; else synth(300, 0.05, 0.02, 'sine'); }
+            if (act === 'down') { player.pos.y++; if(collide(board,player)) player.pos.y--; else { synth(150, 0.05, 0.05, 'sine'); dropCounter=0; } }
+            if (act === 'up') {
+                const m = player.matrix; const newM = m[0].map((_, i) => m.map(row => row[i]).reverse());
+                const oldM = player.matrix; player.matrix = newM; if (collide(board, player)) player.matrix = oldM; else synth(500, 0.05, 0.03, 'triangle');
+            }
+            if (act === 'space') {
+                while (!collide(board, player)) player.pos.y++;
+                player.pos.y--; player.matrix.forEach((r,y)=>r.forEach((v,x)=>{if(v) board[y+player.pos.y][x+player.pos.x]=v;}));
+                synth(100, 0.2, 0.12, 'sawtooth'); arenaSweep(); playerReset(); dropCounter = 0;
+            }
+            draw();
+        };
+
+        window.handleTouchControl = (act) => { if(gameState === 'playing') handleControl(act); };
+
+        window.resetGame = function() {
+            document.getElementById('shutter').style.height = '0'; document.getElementById('game-over-ui').style.opacity = '0';
+            board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+            score = 0; level = 1; comboCount = 0; totalLines = 0; dropInterval = 1000;
+            document.getElementById('score').innerText = "0"; document.getElementById('level').innerText = "1";
+            launchSystem();
+        };
+
+        window.toggleMute = function() {
+            isMuted = !isMuted; document.getElementById('mute-icon').innerText = isMuted ? '🔇' : '🔊';
+            if (!isMuted && gameState === 'playing') playBGM(); else clearTimeout(bgmTimer);
+        };
+
+        document.addEventListener('keydown', e => { 
+            const k = {37:'left', 39:'right', 40:'down', 38:'up', 32:'space'};
+            if (k[e.keyCode]) { e.preventDefault(); handleControl(k[e.keyCode]); }
+        });
+
+        draw();
+    </script>
+</body>
+</html>
