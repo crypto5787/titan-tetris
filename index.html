@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TITAN TETRIS - SUPREME MASTER V8</title>
+    <title>TITAN TETRIS - SUPREME MASTER V9</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Noto+Sans+KR:wght@700;900&display=swap');
@@ -21,7 +21,6 @@
             margin: 0;
         }
 
-        /* 타격감 효과 */
         .impact { animation: impact-shake 0.15s cubic-bezier(.36,.07,.19,.97) both; }
         @keyframes impact-shake {
             0% { transform: scale(1); }
@@ -38,11 +37,9 @@
             height: auto;
         }
 
-        /* UI 레이어 완벽 정중앙 고정 */
         .ui-layer {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            inset: 0;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -52,7 +49,6 @@
             pointer-events: none;
         }
 
-        /* 리얼 메탈 셔터 */
         #shutter {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 0;
@@ -88,7 +84,6 @@
             100% { color: #fff; text-shadow: 0 0 15px #ff3e3e, 0 0 30px #ff3e3e; }
         }
 
-        /* 터치/클릭 공용 버튼 */
         .btn-action {
             background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
             box-shadow: 0 4px 0 #1e3a8a;
@@ -130,7 +125,6 @@
 <body>
 
     <div id="game-frame" class="max-w-4xl w-full flex flex-col items-center gap-4 p-2 relative">
-        <!-- 대시보드 -->
         <div class="w-full max-w-md flex justify-between items-center bg-slate-800 p-4 rounded-2xl border-b-4 border-slate-700 shadow-xl">
             <div class="flex flex-col">
                 <h1 class="text-xl font-black text-blue-400 italic tracking-tighter uppercase font-['Orbitron']">Titan</h1>
@@ -146,8 +140,6 @@
         </div>
 
         <div class="flex flex-col md:flex-row gap-6 justify-center items-center w-full">
-            
-            <!-- 조작 패드 -->
             <div class="flex flex-col gap-4 items-center order-2 md:order-1">
                 <div class="control-grid">
                     <button onpointerdown="handleTouchControl('up')" class="btn-action p-5 col-start-2">
@@ -166,17 +158,13 @@
                         HARD DROP
                     </button>
                 </div>
-                
                 <button onclick="toggleMute()" class="btn-action w-full p-3 bg-slate-800 shadow-slate-900">
                     <span id="mute-icon" class="text-lg">🔊</span>
                 </button>
             </div>
 
-            <!-- 메인 게임판 -->
             <div id="container" class="relative overflow-hidden rounded-xl shadow-2xl order-1 md:order-2" style="width: 240px; height: 480px;">
                 <canvas id="board" width="240" height="480"></canvas>
-                
-                <!-- 인트로 레이어 -->
                 <div id="intro-layer" class="ui-layer bg-slate-900/95 backdrop-blur-md pointer-events-auto">
                     <div onclick="launchSystem()" class="w-[85%] h-72 rounded-[2.5rem] border-4 border-slate-700 flex flex-col items-center justify-center cursor-pointer transition-all bg-slate-800 hover:border-blue-500/40 group">
                         <div class="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 transition-all">
@@ -186,24 +174,19 @@
                         <p id="intro-status" class="text-[9px] font-bold text-blue-400 uppercase tracking-[0.3em] blink">READY TO BOOT</p>
                     </div>
                 </div>
-
-                <!-- 보이스 레이어 -->
                 <div id="voice-layer" class="ui-layer hidden">
                     <h2 id="announcer-text" class="font-black text-white italic">READY</h2>
                 </div>
-
-                <!-- 셔터 -->
                 <div id="shutter">
                     <div class="absolute bottom-10 left-1/2 -translate-x-1/2 w-32 h-4 bg-gradient-to-b from-slate-300 to-slate-800 rounded-full border-2 border-slate-200"></div>
                     <div id="game-over-ui" class="opacity-0 transition-opacity duration-1000 delay-300 flex flex-col items-center justify-center">
                         <h2 class="game-over-neon italic tracking-tighter">GAME OVER</h2>
-                        <button onclick="resetGame()" class="btn-action px-12 py-3 text-lg tracking-widest uppercase mb-6">▶ REBOOT</button>
+                        <button onclick="resetGame()" class="btn-action px-12 py-3 text-lg tracking-widest uppercase mb-6 pointer-events-auto">▶ REBOOT</button>
                         <button onclick="location.reload()" class="text-slate-500 hover:text-white transition-colors font-bold uppercase text-[9px] tracking-[0.3em] pointer-events-auto">Exit Session</button>
                     </div>
                 </div>
             </div>
 
-            <!-- 사이드바 -->
             <div class="hidden md:flex flex-col gap-4 order-3">
                 <div class="bg-slate-800 p-4 rounded-2xl border-b-4 border-slate-700 w-32 shadow-xl">
                     <span class="label-text block text-center mb-3">Next</span>
@@ -228,35 +211,29 @@
 
         let isMuted = false, bgmTimer = null, gameState = 'intro';
 
-        // 💎 한국어 보이스 강제 엔진 (폴백 포함) 💎
         function speakNative(text, callback) {
             if (isMuted) { if(callback) callback(); return; }
-            const msg = new SpeechSynthesisUtterance(text);
-            msg.lang = 'ko-KR'; msg.rate = 1.4; msg.pitch = 1.0;
-            msg.onend = callback;
-            window.speechSynthesis.speak(msg);
-            // 텍스트 투 스피치가 막힐 경우를 대비한 안전장치
-            setTimeout(() => { if(callback) callback(); }, 1200);
+            try {
+                const msg = new SpeechSynthesisUtterance(text);
+                msg.lang = 'ko-KR'; msg.rate = 1.4; msg.pitch = 1.0;
+                msg.onend = () => { if(callback) callback(); };
+                msg.onerror = () => { if(callback) callback(); };
+                window.speechSynthesis.speak(msg);
+            } catch(e) { if(callback) callback(); }
         }
 
-        async function speak(key, callback) {
-            if (isMuted) { if(callback) callback(); return Promise.resolve(); }
+        async function speak(key) {
+            if (isMuted) return;
             const textMap = { ready: '레디', start: '스타트', single: '싱글', double: '더블', triple: '트리플', tetris: '테트리스', combo: '콤보', ending: '여기까지' };
             
-            return new Promise(resolve => {
-                const done = () => { if(callback) callback(); resolve(); };
-                if (voiceCache[key]) {
-                    const audio = new Audio(voiceCache[key]);
-                    audio.playbackRate = 1.3;
-                    audio.onended = done;
-                    audio.onerror = () => speakNative(textMap[key], done);
-                    audio.play().catch(() => speakNative(textMap[key], done));
-                } else {
-                    speakNative(textMap[key], done);
-                }
-                // 절대 멈추지 않도록 하는 마지노선 타임아웃
-                setTimeout(done, 1500);
-            });
+            // 💎 보이스를 실행만 하고 기다리지는 않음 (비동기) 💎
+            if (voiceCache[key]) {
+                const audio = new Audio(voiceCache[key]);
+                audio.playbackRate = 1.3;
+                audio.play().catch(() => speakNative(textMap[key]));
+            } else {
+                speakNative(textMap[key]);
+            }
         }
 
         function synth(freq, dur, vol, type = 'sine', detune = 0) {
@@ -297,7 +274,7 @@
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         contents: [{ parts: [{ text: text }] }],
-                        systemInstruction: { parts: [{ text: "Act as an energetic professional arcade announcer. Shout very short and powerful in Korean." }] },
+                        systemInstruction: { parts: [{ text: "Act as an energetic arcade announcer. Shout very short and powerful in Korean." }] },
                         generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } } } }
                     })
                 });
@@ -310,25 +287,28 @@
         async function preload() {
             const keys = ['ready', 'start', 'single', 'double', 'triple', 'tetris', 'combo', 'ending'];
             const words = ["READY", "START", "SINGLE", "DOUBLE", "TRIPLE", "TETRIS", "COMBO", "여기까지"];
-            // 프리로드는 백그라운드에서 실행 (게임 시작을 방해하지 않음)
             keys.forEach(async (k, i) => { voiceCache[k] = await fetchVoice(words[i]); });
         }
 
+        // 💎 먹통 방지 론칭 로직 (타이머 기반 연출) 💎
         async function launchSystem() {
             if (audioCtx.state === 'suspended') await audioCtx.resume();
-            document.getElementById('intro-status').innerText = "BOOTING...";
-            preload(); // 비동기로 던져놓고 즉시 진행
+            document.getElementById('intro-status').innerText = "SYNCING...";
+            preload(); 
             
             document.getElementById('intro-layer').classList.add('hidden');
             const vLayer = document.getElementById('voice-layer');
             const annText = document.getElementById('announcer-text');
             vLayer.classList.remove('hidden');
 
+            // 음성 응답을 기다리지 않고 정해진 시간에 따라 연출 진행
             annText.innerText = "READY";
-            await speak('ready');
+            speak('ready'); 
+            await new Promise(r => setTimeout(r, 1000)); // 1초 대기 (무조건 실행)
             
             annText.innerText = "START";
-            await speak('start');
+            speak('start');
+            await new Promise(r => setTimeout(r, 800)); // 0.8초 대기 (무조건 실행)
             
             vLayer.classList.add('hidden');
             gameState = 'playing'; playerReset(); kIdx = 0; playBGM(); lastTime = performance.now(); update();
@@ -344,8 +324,8 @@
             }
             c.fillStyle = '#000'; c.fillRect(px, py, s, s);
             c.fillStyle = color; c.fillRect(px + 1, py + 1, s - 2, s - 2);
-            c.fillStyle = 'rgba(255, 255, 255, 0.5)'; c.fillRect(px + 1, py + 1, s - 2, 3); c.fillRect(px + 1, py + 1, 3, s - 2);
-            c.fillStyle = 'rgba(0, 0, 0, 0.35)'; c.fillRect(px + 1, py + s - 4, s - 2, 3); c.fillRect(px + s - 4, py + 1, 3, s - 2);
+            c.fillStyle = 'rgba(255, 255, 255, 0.45)'; c.fillRect(px + 1, py + 1, s - 2, 3); c.fillRect(px + 1, py + 1, 3, s - 2);
+            c.fillStyle = 'rgba(0, 0, 0, 0.3)'; c.fillRect(px + 1, py + s - 4, s - 2, 3); c.fillRect(px + s - 4, py + 1, 3, s - 2);
             c.fillStyle = 'rgba(0, 0, 0, 0.15)'; c.fillRect(px + 5, py + 5, s - 10, s - 10);
             c.fillStyle = color; c.fillRect(px + 6, py + 6, s - 12, s - 12);
         }
@@ -389,10 +369,11 @@
                 }
             }
             if (rc > 0) {
-                speak(['', 'single', 'double', 'triple', 'tetris'][rc]);
+                const keys = ['', 'single', 'double', 'triple', 'tetris'];
+                speak(keys[rc]);
                 comboCount++; totalLines += rc;
                 if (comboCount > 1) { setTimeout(() => speak('combo'), 250); document.getElementById('combo-tag').classList.remove('hidden'); document.getElementById('combo-count').innerText = comboCount; }
-                score += ([0, 100, 400, 900, 6000][rc] + (comboCount > 1 ? comboCount * 3500 * rc : 0)) * level;
+                score += ([0, 100, 400, 900, 6000][rc] + (comboCount > 1 ? comboCount * 3000 * rc : 0)) * level;
                 if (totalLines >= level * 6) { level++; dropInterval = Math.max(100, 1000 * Math.pow(0.78, level-1)); }
                 document.getElementById('score').innerText = score.toLocaleString(); document.getElementById('level').innerText = level;
                 document.getElementById('game-frame').classList.add('impact'); setTimeout(()=>document.getElementById('game-frame').classList.remove('impact'), 150);
